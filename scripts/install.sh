@@ -2,6 +2,11 @@
 set -euo pipefail
 
 SPARK_PREFIX="${SPARK_PREFIX:-$HOME/.spark}"
+if [ "$(id -u)" -eq 0 ] && [ "$SPARK_PREFIX" = "$HOME/.spark" ]; then
+  if [ -d "/opt/spark" ]; then
+    SPARK_PREFIX="/opt/spark"
+  fi
+fi
 SPARK_CLI_SOURCE="${SPARK_CLI_SOURCE:-https://github.com/vibeforge1111/spark-cli}"
 SPARK_CLI_RELEASE_NAME="${SPARK_CLI_RELEASE_NAME:-spark-cli-public-installer-2026-05-30-r22}"
 SPARK_DEFAULT_CLI_REF="spark-cli-public-installer-2026-05-30-r22"

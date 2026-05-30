@@ -912,6 +912,10 @@ def keychain_available() -> bool:
 
 
 def default_spark_home() -> Path:
+    if _is_root():
+        system_path = Path("/opt/spark")
+        if system_path.exists():
+            return system_path
     return Path.home().joinpath(".spark").expanduser()
 
 
@@ -2613,11 +2617,20 @@ def policy_path_is_same_or_child(candidate: Path, parent: Path) -> bool:
         return False
 
 
+def _is_root() -> bool:
+    return hasattr(os, "geteuid") and os.geteuid() == 0
+
+
 def write_denied_prefixes(home: Path | None = None) -> list[Path]:
     home_path = policy_home_path(home)
     denied = [home_path / relative for relative in WRITE_DENIED_HOME_PREFIXES]
     if sys.platform != "win32":
-        denied.extend(Path(prefix) for prefix in WRITE_DENIED_POSIX_PREFIXES)
+        home_real = home_path.resolve()
+        for prefix in WRITE_DENIED_POSIX_PREFIXES:
+            prefix_path = Path(prefix).resolve()
+            if _is_root() and home_real == prefix_path:
+                continue
+            denied.append(prefix_path)
     else:
         path_type = home_path.__class__
         appdata = os.environ.get("APPDATA")
