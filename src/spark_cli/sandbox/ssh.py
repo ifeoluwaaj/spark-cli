@@ -475,11 +475,12 @@ def trust_ssh_target_host_key(
             if raw_line.strip() and not raw_line.startswith(f"{alias} "):
                 lines.append(raw_line)
     lines.append(scan.known_hosts_line)
-    known_hosts.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    try:
-        known_hosts.chmod(0o600)
-    except OSError:
-        pass
+    # Write atomically: use a temp file and os.replace so that a
+    # concurrent reader never observes a half-written known_hosts.
+    tmp = known_hosts.with_suffix(f".tmp.{os.getpid()}")
+    tmp.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    tmp.chmod(0o600)
+    os.replace(tmp, known_hosts)
     trusted = SshTarget(
         **{
             **target.to_dict(),
