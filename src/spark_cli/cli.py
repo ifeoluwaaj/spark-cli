@@ -14444,7 +14444,10 @@ def stop_module(name: str, pid: int) -> None:
                     os.killpg(pid, sigkill)
                 except OSError:
                     subprocess.run(["kill", "-9", str(pid)], check=False, capture_output=True)
-    print(f"Stopped {name} (pid {pid})")
+    if pid_is_running(pid):
+        print(f"Failed to stop {name} (pid {pid}) — process still running")
+    else:
+        print(f"Stopped {name} (pid {pid})")
 
 
 def stop_tracked_process_key(process_key: str) -> bool:
